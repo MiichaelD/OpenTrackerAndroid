@@ -95,14 +95,15 @@ public class OTExampleActivity extends Activity {
         values.put("exampleEditText", mEdit.getText().toString());
 
         // send a custom url to be rendered in the opentracker user interface
-        values.put("url", "http://yahoo.com");
+        values.put("url", "http://itmexicali.webs.com");
+        values.put("app", "colorized for android");
 
         Log.v(TAG, "clickExampleButton(): " + values);
 
         // Record an event with the title "button clickExampleButton", you
         // can call it anything you want, and attributes defined in hashmap
         // values
-        OTLogService.sendEvent("button clickExampleButton", values);
+        OTLogService.sendEvent("button clicked", values);
 
     }
 
@@ -114,7 +115,7 @@ public class OTExampleActivity extends Activity {
         Log.v(TAG, "clickExampleCheckBox()");
         // Record an event with the title "button onClickCheckBox", but you
         // can call it anything you want.
-        OTLogService.sendEvent("button clickExampleCheckBox");
+        OTLogService.sendEvent("button Checkbox Activity");
     }
 
     /**
@@ -173,11 +174,12 @@ public class OTExampleActivity extends Activity {
                             new HashMap<String, String>();
 
                     values.put("exampleSeekBarValue", "" + lastSeekBarValue);
+                    values.put("name", "michael duarte");
 
                     // adding a second value just for fun
                     values.put("exampleSeekBarFromUser", "" + lastFromUser);
                     Log.v(TAG, "clickExampleButton(): " + values);
-                    OTLogService.sendEvent("onStopTrackingTouch() called",
+                    OTLogService.sendEvent("Slider Value updated() called",
                             values);
 
                 }
@@ -190,7 +192,7 @@ public class OTExampleActivity extends Activity {
     public void clickExampleViewBehaviorButton(View v) {
         Log.v(TAG, "clickExampleViewBehaviorButton()");
 
-        OTLogService.sendEvent("button clickExampleViewBehaviorButton");
+        OTLogService.sendEvent("button open webpage");
 
         // http://stackoverflow.com/questions/2201917/how-can-i-open-a-url-in-androids-web-browser-from-my-application
         Intent browserIntent =
@@ -214,14 +216,14 @@ public class OTExampleActivity extends Activity {
 
         // Initiate opentracker's logging service, with the Context and
         // your-registered-app-name
-        OTLogService.onCreate(appContext, "your-registered-app-name");
+        OTLogService.onCreate(appContext, "colorized");
 
         // uncomment to reset session/ user data for opentracker.
-        // OTLogService.reset();
+         OTLogService.reset();
 
         // to test things real-time always send data directly to logging service
         // make sure to comment this out if you are not testing
-        // OTLogService.setDirectSend(true);
+         OTLogService.setDirectSend(true);
 
         // Record an event with the title "onCreate() called", but you can call
         // it anything you want
@@ -263,8 +265,8 @@ public class OTExampleActivity extends Activity {
     protected void onResume() {
         super.onResume();
         // No real need to log this event, but you can if you need to, want to
-        // Log.v(TAG, "onResume()");
-        // OTLogService.sendEvent("onResume() called");
+         Log.v(TAG, "onResume()");
+         OTLogService.sendEvent("onResume() called");
     }
 
 }
