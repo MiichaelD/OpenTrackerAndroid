@@ -70,10 +70,14 @@ import org.apache.http.util.EntityUtils;
 public class OTSend {
 
     private static final String boundary = "*****";
+    private static final String lineEnd = "\r\n";
+    private static final String twoHyphens = "--";
+    private static final String TAG = OTSend.class.getName().intern();
 
     private static byte[] buffer;
 
     private static int bytesRead, bytesAvailable, bufferSize;
+    private static final int maxBufferSize = 1 * 1024 * 1024; // 1MB
 
     private static HttpURLConnection conn = null;
 
@@ -84,34 +88,21 @@ public class OTSend {
      * the HTTP method parameters.
      */
     private static final int HTTP_SOCKET_TIMEOUT = 3000;
-
+    
     public static final String DEFAULT_LOG_URL = "http://log.opentracker.net/";
-
-    private static final String DEFAULT_UPLOAD_SERVER =
-            "http://upload.opentracker.net/upload/upload.jsp";
+    private static final String DEFAULT_UPLOAD_SERVER = "http://upload.opentracker.net/upload/upload.jsp";
 
     private static DataOutputStream dos = null;
-
     private static DataInputStream inStream = null;
-
-    private static final String lineEnd = "\r\n";
-
-    private static final int maxBufferSize = 1 * 1024 * 1024;
-
-    private static final String TAG = OTSend.class.getName();
-
-    private static final String twoHyphens = "--";
 
     /**
      * getResponseBody function gives out the HTTP POST data from the given
      * httpResponse output: data from the http as string input : httpEntity type
      * 
      * based on:
-     * http://thinkandroid.wordpress.com/2009/12/30/getting-response-body
-     * -of-httpresponse/
+     * http://thinkandroid.wordpress.com/2009/12/30/getting-response-body-of-httpresponse/
      */
-    private static String getResponseBody(final HttpEntity entity)
-            throws IOException, ParseException {
+    private static String getResponseBody(final HttpEntity entity) throws IOException, ParseException {
         LogWrapper.v(TAG, "getResponseBody(final HttpEntity entity)");
 
         if (entity == null) {
@@ -122,8 +113,7 @@ public class OTSend {
             return "";
         }
         if (entity.getContentLength() > Integer.MAX_VALUE) {
-            throw new IllegalArgumentException(
-                    "HTTP entity too large to be buffered in memory");
+            throw new IllegalArgumentException("HTTP entity too large to be buffered in memory");
         }
         String charset = EntityUtils.getContentCharSet(entity);
         if (charset == null) {
@@ -164,27 +154,18 @@ public class OTSend {
         HttpClient client = new DefaultHttpClient();
 
         // time to wait before throwing timeout exception
-        client.getParams().setParameter("http.socket.timeout",
-                new Integer(HTTP_SOCKET_TIMEOUT));
+        client.getParams().setParameter("http.socket.timeout", HTTP_SOCKET_TIMEOUT);
 
         HttpPost post = new HttpPost(DEFAULT_LOG_URL);
-        post.getParams().setParameter("http.socket.timeout",
-                new Integer(HTTP_SOCKET_TIMEOUT));
+        post.getParams().setParameter("http.socket.timeout", HTTP_SOCKET_TIMEOUT);
 
-        Iterator<Entry<String, String>> it =
-                keyValuePairs.entrySet().iterator();
+        Iterator<Entry<String, String>> it = keyValuePairs.entrySet().iterator();
 
         List<NameValuePair> pairs = new ArrayList<NameValuePair>();
         while (it.hasNext()) {
-
-            Map.Entry<String, String> pair =
-                    (Map.Entry<String, String>) it.next();
+            Map.Entry<String, String> pair = it.next();
             pairs.add(new BasicNameValuePair(pair.getKey(), pair.getValue()));
-            if (pair.getKey().equals("ots") || pair.getKey().equals("otui"))
-                LogWrapper.v(TAG, pair.getKey() + " = " + pair.getValue());
-            else
-                LogWrapper.v(TAG, pair.getKey() + " = " + pair.getValue());
-
+            LogWrapper.v(TAG, pair.getKey() + " = " + pair.getValue());
         }
 
         String responseText = null;
@@ -243,17 +224,17 @@ public class OTSend {
      *            The path to use taking the apps context into account
      * @param fileName
      *            The file name to append to
-     */
-    private static boolean uploadFile(String uploadServer,
-            String internalPathName, String fileName) {
+     */            
+    @SuppressWarnings("deprecation")
+	private static boolean uploadFile(String uploadServer, String internalPathName, String fileName) {
+     
         LogWrapper.v(TAG, "uploadFile(uploadServer, pathName, fileName)");
 
         String randomFileName = UUID.randomUUID() + ".gz";
 
         try {
             // ------------------ CLIENT REQUEST
-            FileInputStream fileInputStream =
-                    new FileInputStream(new File(internalPathName + fileName));
+            FileInputStream fileInputStream = new FileInputStream(new File(internalPathName + fileName));
 
             // Open a URL connection to the Servlet
             URL url = new URL(uploadServer);
@@ -291,13 +272,8 @@ public class OTSend {
             buffer = new byte[bufferSize];
 
             // read file and write it into form...
-            bytesRead = fileInputStream.read(buffer, 0, bufferSize);
-
-            while (bytesRead > 0) {
-                dos.write(buffer, 0, bufferSize);
-                bytesAvailable = fileInputStream.available();
-                bufferSize = Math.min(bytesAvailable, maxBufferSize);
-                bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+            while ( (bytesRead = fileInputStream.read(buffer, 0, bufferSize)) > 0) {
+                dos.write(buffer, 0, bytesRead);
             }
 
             // send multipart form data necesssary after file data...
