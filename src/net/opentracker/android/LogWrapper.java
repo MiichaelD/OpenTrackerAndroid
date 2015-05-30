@@ -21,61 +21,42 @@ import android.util.Log;
  * @version $Id: LogWrapper.java 13603 2011-11-29 11:55:42Z eddie $
  */
 public class LogWrapper {
-
-    private static final int VERBOSE = 1;
-
-    private static final int DEBUG = 2;
-
-    private static final int INFO = 3;
-
-    private static final int WARN = 4;
-
-    private static final int ERROR = 5;
+    
+    public enum LogLevel{ kVerbose, kDebug, kInfo, kWarn, kError; };
 
     /*
-     * Common way is make a int named LOG_LEVEL, and you can define it's debug
-     * level based on LOG_LEVEL .
-     * 
-     * Later, you can just change the LOG_LEVEL for all debug output level.
+     * Common way is make a LogLevel variable, and define it as Debug
+     * This will show all the logs of level Debug and up
      * 
      * By default this should be INFO or above.
      * 
      * Lower levels will give more details but will also clutter up the LogCat
      * output.
      */
-    private static final int LOG_LEVEL = INFO;
+    private static final LogLevel m_logLevel = LogLevel.kVerbose;
 
-    @SuppressWarnings("all")
     public static void v(String tag, Object msg) {
-        if (VERBOSE >= LOG_LEVEL)
+        if (m_logLevel.compareTo(LogLevel.kVerbose) >= 0)
             Log.v(tag, msg.toString());
     }
 
-    @SuppressWarnings("all")
     public static void d(String tag, Object msg) {
-        if (DEBUG >= LOG_LEVEL)
-            Log.d(tag, msg.toString());
+        if (m_logLevel.compareTo(LogLevel.kDebug) >= 0)
+            Log.v(tag, msg.toString());
     }
 
-    @SuppressWarnings("all")
     public static void i(String tag, Object msg) {
-        if (INFO >= LOG_LEVEL) {
+        if (m_logLevel.compareTo(LogLevel.kInfo) >= 0)
             Log.i(tag, msg.toString());
-        }
     }
 
-    @SuppressWarnings("all")
     public static void w(String tag, Object msg) {
-        if (WARN >= LOG_LEVEL) {
+        if (m_logLevel.compareTo(LogLevel.kWarn) >= 0)
             Log.w(tag, msg.toString());
-        }
     }
 
-    @SuppressWarnings("all")
     public static void e(String tag, Object msg) {
-        if (ERROR >= LOG_LEVEL) {
+        if (m_logLevel.compareTo(LogLevel.kError) >= 0)
             Log.e(tag, msg.toString());
-        }
     }
-
 }
