@@ -239,12 +239,12 @@ public class OTLocationService {
         try {
             isGpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
         } catch (Exception e) {
-            Log.e(TAG,"GPS-based location service not enabled. Missing permision?");
+            Log.e(TAG,"GPS-based location service not enabled");
         }
         try {
             isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
         } catch (Exception e) {
-            Log.e(TAG,"Network-based location service not enabled. Missing permision?");
+            Log.e(TAG,"Network-based location service not enabled");
         }
 
         // don't start listeners if no provider is enabled

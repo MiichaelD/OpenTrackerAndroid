@@ -1,28 +1,24 @@
 package net.opentracker.android.test;
 
+import net.opentracker.android.LogWrapper;
 import android.content.Context;
 import android.location.Location;
 import android.location.LocationManager;
 import android.location.LocationProvider;
 import android.os.Bundle;
-import android.util.Config;
-import android.util.Log;
 
 public class MyLocationManager {
 
-    private static final String TAG = "MyLocationManager ";
+    private static final String TAG = MyLocationManager.class.getSimpleName();
 
     private Context mContext = null;
 
     private LocationManager mLocationManager = null;
 
     public MyLocationManager(Context context) {
-        this.mContext = context;
-
-        if (this.mContext != null) {
-            this.mLocationManager =
-                    (LocationManager) this.mContext
-                            .getSystemService(Context.LOCATION_SERVICE);
+        mContext = context;
+        if (mContext != null) {
+            mLocationManager = (LocationManager) mContext.getSystemService(Context.LOCATION_SERVICE);
         }
     }
 
@@ -54,9 +50,7 @@ public class MyLocationManager {
                 // newLocation.setTime(System.currentTimeMillis());
                 newLocation.setTime(System.currentTimeMillis());
 
-                if (Config.DEBUG) {
-                    Log.i(TAG, "onLocationChanged in loc mgnr");
-                }
+                LogWrapper.i(TAG, "onLocationChanged in loc mgnr");
             }
             mLastLocation.set(newLocation);
             mValid = true;
@@ -83,24 +77,18 @@ public class MyLocationManager {
     public void startLocationReceiving() {
         if (this.mLocationManager != null) {
             try {
-                this.mLocationManager.requestLocationUpdates(
-                        LocationManager.NETWORK_PROVIDER, 1000, 0F,
+                this.mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000, 0F,
                         this.mLocationListeners[1]);
             } catch (java.lang.SecurityException ex) {
-                if (Config.DEBUG) {
-                    Log.e(TAG, "SecurityException " + ex.getMessage());
-                }
+            	LogWrapper.e(TAG, "SecurityException " + ex.getMessage());
             } catch (IllegalArgumentException ex) {
                 // Log.e(TAG, "provider does not exist " + ex.getMessage());
             }
             try {
-                this.mLocationManager.requestLocationUpdates(
-                        LocationManager.GPS_PROVIDER, 1000, 0F,
+                this.mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0F,
                         this.mLocationListeners[0]);
             } catch (java.lang.SecurityException ex) {
-                if (Config.DEBUG) {
-                    Log.e(TAG, "SecurityException " + ex.getMessage());
-                }
+            	LogWrapper.e(TAG, "SecurityException " + ex.getMessage());
             } catch (IllegalArgumentException ex) {
                 // Log.e(TAG, "provider does not exist " + ex.getMessage());
             }
