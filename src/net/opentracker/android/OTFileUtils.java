@@ -45,9 +45,7 @@ import android.content.Context;
  */
 public class OTFileUtils {
 
-    private static final String LINE_SEPARATOR =
-            System.getProperty("line.separator");
-
+    private static final String LINE_SEPARATOR = System.getProperty("line.separator");
     private static final String TAG = OTFileUtils.class.getName();
 
     /*
@@ -84,26 +82,19 @@ public class OTFileUtils {
     public void appendToFile(String pathName, String fileName,
             String writeString) throws IOException {
         LogWrapper.v(TAG, "appendToFile()");
-
-        if (pathName == null || fileName == null) {
-            LogWrapper.w(TAG, "Unable to make, get or create file: " + fileName
-                    + " with pathName: " + pathName);
-            throw new IOException("pathName and/ or fileName is null");
-        }
-
-        String internalPath = appContext.getFilesDir() + pathName;
-
-        File file = new File(internalPath + fileName);
+        File file = getFile(pathName,fileName);
+        BufferedWriter writer = null;
         if (file != null) {
             try {
-                BufferedWriter writer =
-                        new BufferedWriter(new FileWriter(file, true));
+                writer = new BufferedWriter(new FileWriter(file, true));
                 writer.write(writeString);
                 writer.newLine(); // Write system dependent end of line.
-                writer.close();
             } catch (IOException e) {
                 LogWrapper.w(TAG, "Write has failed: " + e.getMessage());
                 throw new IOException();
+            } finally{
+            	if(writer != null)
+            		writer.close();
             }
             return;// success
         }
@@ -122,17 +113,8 @@ public class OTFileUtils {
     public void compressFile(String pathName, String fileName)
             throws IOException {
         LogWrapper.v(TAG, "compressFile()");
-        // String localPath = path.replace("OTTest", "OTDir");
-
-        if (pathName == null || fileName == null) {
-            LogWrapper.w(TAG, "Unable to make, get or create file: " + fileName
-                    + " with pathName: " + pathName);
-            throw new IOException("pathName and/ or fileName is null");
-        }
-
-        String internalPath = appContext.getFilesDir() + pathName;
+        File file = getFile(pathName,fileName);
         try {
-            File file = new File(internalPath + fileName);
 
             LogWrapper.v(TAG, "Entering method to zip the file: " + file);
             String gzipFile = file + ".gz";
@@ -154,8 +136,7 @@ public class OTFileUtils {
             FileInputStream fin = new FileInputStream(file);
             BufferedInputStream in = new BufferedInputStream(fin);
 
-            LogWrapper.v(TAG, "Transferring file from" + file + " to "
-                    + gzipFile);
+            LogWrapper.v(TAG, "Transferring file from" + file + " to " + gzipFile);
             byte[] buffer = new byte[1024];
             int i;
             while ((i = in.read(buffer)) >= 0) {
@@ -164,13 +145,12 @@ public class OTFileUtils {
             in.close();
             gzos.close();
 
-            File fileGz = new File(internalPath + gzipFileName);
+            File fileGz = new File(file.getAbsolutePath() + gzipFileName);
             LogWrapper.v(TAG, "File is in now gzip format, size:"
                     + fileGz.length() + "[bytes] from  " + file.length()
                     + "[bytes]");
 
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
@@ -178,12 +158,10 @@ public class OTFileUtils {
     public String[] listFiles(String pathName) {
         long t0 = System.currentTimeMillis();
         LogWrapper.v(TAG, "listFiles()");
-
         String internalPath = appContext.getFilesDir() + pathName;
-
         File dir = new File(internalPath);
 
-        String[] children = dir.list();
+        String[] children = dir == null ? null : dir.list();
 
         /*
          * if (children == null) { // Either dir does not exist or is not a
@@ -196,10 +174,7 @@ public class OTFileUtils {
         t0 = System.currentTimeMillis() - t0;
         LogWrapper.v(TAG, t0 + "[ms]");
 
-        if (dir == null)
-            return null;
-        else
-            return children;
+        return children;
 
     }
 
@@ -232,17 +207,10 @@ public class OTFileUtils {
     public void emptyFile(String pathName, String fileName) throws IOException {
         long t0 = System.currentTimeMillis();
         LogWrapper.v(TAG, "emptyFile()");
-        if (pathName == null || fileName == null) {
-            LogWrapper.w(TAG, "Unable to make, get or create file: " + fileName
-                    + " with pathName: " + pathName);
-            return;
-        }
-
-        String internalPath = appContext.getFilesDir() + pathName;
-
+        File file = getFile(pathName,fileName);
         FileOutputStream erasor;
         try {
-            erasor = new FileOutputStream(internalPath + fileName);
+            erasor = new FileOutputStream(file.getAbsolutePath() + fileName);
             erasor.write(new byte[0]);
             erasor.close();
         } catch (FileNotFoundException e) {
@@ -269,8 +237,7 @@ public class OTFileUtils {
      * 
      * @throws IOException
      */
-    public HashMap<String, String> getSessionStateDataPairs()
-            throws IOException {
+    public HashMap<String, String> getSessionStateDataPairs() throws IOException {
         LogWrapper.v(TAG, "getSessionStateDataPairs()");
 
         File dir = new File(appContext.getFilesDir() + sessionStateDirectory);
@@ -319,30 +286,14 @@ public class OTFileUtils {
      */
     public void makeFile(String pathName, String fileName) throws IOException {
         LogWrapper.v(TAG, "makeFile(String pathName, String fileName)");
-
-        if (pathName == null || fileName == null) {
-            LogWrapper.w(TAG, "Unable to make, get or create file: " + fileName
-                    + " with pathName: " + pathName);
-            throw new IOException("pathName and/ or fileName is null");
-        }
-
-        // .getAbsolutePath() gives same results as getFilesDir() (?)
-        String internalPath =
-                appContext.getFilesDir().getAbsolutePath() + pathName;
-
-        // LogWrapper.d(TAG, "got appContext.getFilesDir(): " +
-        // appContext.getFilesDir());
-        // LogWrapper.d(TAG, "got appContext.getFilesDir().getAbsolutePath(): "
-        // + appContext.getFilesDir().getAbsolutePath());
-
-        File file = new File(internalPath + fileName);
+        File file = getFile(pathName,fileName);
         if (file.exists()) {
             return;
         }
 
         // Otherwise, create any necessary directories, and the file itself.
         try {
-            new File(internalPath).mkdirs();
+            new File(file.getAbsolutePath()).mkdirs();
 
             if (file.createNewFile()) {
                 return;
@@ -381,21 +332,11 @@ public class OTFileUtils {
      */
     public String readFile(String pathName, String fileName) throws IOException {
         LogWrapper.v(TAG, "readFile(String pathName, String fileName)");
-
-        if (pathName == null || fileName == null) {
-            LogWrapper.w(TAG, "Unable to make, get or create file: " + fileName
-                    + " with pathName: " + pathName);
-            throw new IOException("pathName and/ or fileName is null");
-        }
-
-        String internalPath = appContext.getFilesDir() + pathName;
-        File file = new File(internalPath + fileName);
+        File file = getFile(pathName,fileName);
 
         try {
             // http://www.devdaily.com/java/java-bufferedreader-readline-string-examples
-
-            BufferedReader reader =
-                    new BufferedReader(new InputStreamReader(
+            BufferedReader reader =  new BufferedReader(new InputStreamReader(
                             new FileInputStream(file), "UTF-8"), 2 * 1024);
             String line = null;
             StringBuffer content = new StringBuffer();
@@ -411,7 +352,7 @@ public class OTFileUtils {
             reader.close();
 
             LogWrapper.v(TAG, "The following data has been read from "
-                    + internalPath + fileName + ": " + result);
+                    + file.getAbsolutePath() + fileName + ": " + result);
 
             return result;
 
@@ -439,21 +380,10 @@ public class OTFileUtils {
      * @return
      * @throws IOException
      */
-    public long getFileSize(String pathName, String fileName)
-            throws IOException {
-
+    public long getFileSize(String pathName, String fileName) throws IOException {
         long t0 = System.currentTimeMillis();
-
         LogWrapper.v(TAG, "getFileSize(String pathName, String fileName)");
-
-        if (pathName == null || fileName == null) {
-            LogWrapper.w(TAG, "Unable to make, get or create file: " + fileName
-                    + " with pathName: " + pathName);
-            throw new IOException("pathName and/ or fileName is null");
-        }
-
-        String internalPath = appContext.getFilesDir() + pathName;
-        File file = new File(internalPath + fileName);
+        File file = getFile(pathName,fileName);
 
         // Get the number of bytes in the file
         long length = file.length();
@@ -489,19 +419,9 @@ public class OTFileUtils {
      * @return
      * @throws IOException
      */
-    public String[] readFileLines(String pathName, String fileName)
-            throws IOException {
+    public String[] readFileLines(String pathName, String fileName) throws IOException {
         LogWrapper.v(TAG, "readFileLines(String pathName, String fileName)");
-
-        if (pathName == null || fileName == null) {
-            LogWrapper.w(TAG, "Unable to make, get or create file: " + fileName
-                    + " with pathName: " + pathName);
-            throw new IOException("pathName and/ or fileName is null");
-        }
-
-        String internalPath = appContext.getFilesDir() + pathName;
-        File file = new File(internalPath + fileName);
-
+        File file = getFile(pathName,fileName);
         ArrayList<String> fileLines = new ArrayList<String>();
         try {
             // If it did exist, the file contains the ID.
@@ -522,11 +442,8 @@ public class OTFileUtils {
             throw new IOException();
         }
         // LogWrapper.i(TAG, "line:" + fileLines);
-        String[] arrayLines = new String[fileLines.size()];
-        for (int i = 0; i < fileLines.size(); i++) {
-            arrayLines[i] = fileLines.get(i);
-        }
-        return arrayLines;
+        
+        return (String[])fileLines.toArray();
     }
 
     /**
@@ -540,16 +457,7 @@ public class OTFileUtils {
      */
     public void removeFile(String pathName, String fileName) throws IOException {
         LogWrapper.v(TAG, "removeFile()");
-
-        if (pathName == null || fileName == null) {
-            LogWrapper.w(TAG, "Unable to make, get or create file: " + fileName
-                    + " with pathName: " + pathName);
-            throw new IOException("pathName and/ or fileName is null");
-        }
-
-        String internalPath = appContext.getFilesDir() + pathName;
-        File file = new File(internalPath + fileName);
-
+        File file = getFile(pathName,fileName);
         // remove file
         file.delete();
         LogWrapper.v(TAG, "removed file:" + fileName);
@@ -567,8 +475,7 @@ public class OTFileUtils {
      * @throws IOException
      *             If a file could not be written, or any parameters are null
      */
-    public void writeFile(String fileName, String writeString)
-            throws IOException {
+    public void writeFile(String fileName, String writeString) throws IOException {
         LogWrapper.v(TAG, "writeFile(String fileName, String writeString)");
         writeFile(sessionStateDirectory, fileName, writeString);
     }
@@ -585,22 +492,9 @@ public class OTFileUtils {
      * @throws IOException
      *             If a file could not be written, or any parameters are null
      */
-    public void writeFile(String pathName, String fileName, String writeString)
-            throws IOException {
-        LogWrapper
-                .v(TAG,
-                        "writeFile(String pathName, String fileName, String writeString)");
-
-        if (pathName == null || fileName == null || writeString == null) {
-            LogWrapper.w(TAG, "Unable to make, get or create file: " + fileName
-                    + " with pathName: " + pathName);
-            throw new IOException("pathName and/ or fileName is null");
-        }
-
-        // TODO .getAbsolutePath()
-        String internalPath = appContext.getFilesDir() + pathName;
-
-        File file = new File(internalPath + fileName);
+    public void writeFile(String pathName, String fileName, String writeString) throws IOException {
+        LogWrapper.v(TAG, "writeFile(String pathName, String fileName, String writeString)");
+        File file = getFile(pathName,fileName);
         if (file != null) {
             try {
                 FileWriter writer = new FileWriter(file);
@@ -614,6 +508,18 @@ public class OTFileUtils {
             return;
         }
         throw new IOException("Cannot write to file: " + fileName);
+    }
+    
+    
+    private File getFile(String pathName, String fileName) throws IOException{
+    	if (pathName == null || fileName == null) {
+            LogWrapper.w(TAG, "Unable to make, get or create file: " + fileName
+                    + " with pathName: " + pathName);
+            throw new IOException("pathName and/ or fileName is null");
+        }
+
+        String internalPath = appContext.getFilesDir() + pathName;
+        return new File(internalPath + fileName);
     }
 
 }
