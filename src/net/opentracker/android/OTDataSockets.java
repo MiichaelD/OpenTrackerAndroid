@@ -59,6 +59,8 @@ public class OTDataSockets {
     // private static OTLocationService locationService = null;
 
     public static final String WIFI = "WIFI";
+    
+    static Location lastLocation = null; 
 
     /**
      * Gets the pretty string for this application's version name as defined in
@@ -82,119 +84,91 @@ public class OTDataSockets {
             return "unknown";
         }
     }
+    
+    public static Location updateLocation(final Context appContext){
+        LocationManager locationManager = (LocationManager) appContext.getSystemService(Context.LOCATION_SERVICE);
+        // try to get the latest
+        lastLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+
+        // dont return default 0,0 values sometimes seen
+        if (lastLocation.getLatitude() == 0f || lastLocation.getLongitude() == 0)
+        	lastLocation = null;
+        
+        return lastLocation;
+    }
 
     public static String getCoordinateAccuracy(final Context appContext) {
         long t0 = System.currentTimeMillis();
-        LogWrapper.v(TAG, "getLastCoordinates()");
-
-        LocationManager locationManager = (LocationManager) appContext.getSystemService(Context.LOCATION_SERVICE);
-
-        // try to get the latest
-        Location tmpLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-
-        if (tmpLocation == null) {
+        LogWrapper.v(TAG, "getCoordinateAccuracy()");
+        updateLocation(appContext);
+        
+        if (lastLocation == null) {
         	 LogWrapper.v(TAG, t0 + "[ms]");
              return null;
         }
 
-        String value = "" + tmpLocation.getAccuracy();
-        LogWrapper.v(TAG, "getCoordinateAccuracy: " + value + "; on " + new Date(tmpLocation.getTime()));
+        String value = "" + lastLocation.getAccuracy();
+        LogWrapper.v(TAG, "getCoordinateAccuracy: " + value + "; on " + new Date(lastLocation.getTime()));
         t0 = System.currentTimeMillis() - t0;
         LogWrapper.v(TAG, t0 + "[ms]");
-
-        // dont return default 0,0 values sometimes seen
-        if (tmpLocation.getLatitude() != 0f && tmpLocation.getLongitude() != 0) {
-            return value;
-        } else {
-            return null;
-        }
+        return value;
     }
 
     public static String getCoordinateLatitude(final Context appContext) {
-        long t0 = System.currentTimeMillis();
-        LogWrapper.v(TAG, "getLastCoordinates()");
-
-        LocationManager locationManager = (LocationManager) appContext.getSystemService(Context.LOCATION_SERVICE);
-
-        // try to get the latest
-        Location tmpLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-
-        if (tmpLocation == null) {
-        	LogWrapper.v(TAG, t0 + "[ms]");
-            return null;
+    	long t0 = System.currentTimeMillis();
+        LogWrapper.v(TAG, "getCoordinateLatitude()");
+        updateLocation(appContext);
+        
+        if (lastLocation == null) {
+        	 LogWrapper.v(TAG, t0 + "[ms]");
+             return null;
         }
 
-        String value = "" + tmpLocation.getLatitude();
+        String value = "" + lastLocation.getLatitude();
 
-         LogWrapper.v(TAG, "tmpLocation.getAccuracy: " + tmpLocation.getAccuracy());
-         LogWrapper.v(TAG, "getLastLatitude: " + value + "; on " + new Date(tmpLocation.getTime()));
-         t0 = System.currentTimeMillis() - t0;
-         LogWrapper.v(TAG, t0 + "[ms]");
-
-        // dont return default 0,0 values sometimes seen
-        if (tmpLocation.getLatitude() != 0f && tmpLocation.getLongitude() != 0) {
-            return value;
-        } else {
-            return null;
-        }
+        LogWrapper.v(TAG, "getAccuracy: " + lastLocation.getAccuracy());
+        LogWrapper.v(TAG, "getLastLatitude: " + value + "; on " + new Date(lastLocation.getTime()));
+        t0 = System.currentTimeMillis() - t0;
+        LogWrapper.v(TAG, t0 + "[ms]");
+        return value;
     }
 
     public static String getCoordinateLongitude(final Context appContext) {
-        long t0 = System.currentTimeMillis();
-        LogWrapper.v(TAG, "getLastCoordinates()");
-
-        LocationManager locationManager = (LocationManager) appContext.getSystemService(Context.LOCATION_SERVICE);
-
-        // try to get the latest
-        Location tmpLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-
-        if (tmpLocation == null) {
-            LogWrapper.v(TAG, t0 + "[ms]");
-            return null;
+    	long t0 = System.currentTimeMillis();
+        LogWrapper.v(TAG, "getCoordinateLongitude()");
+        updateLocation(appContext);
+        
+        if (lastLocation == null) {
+        	 LogWrapper.v(TAG, t0 + "[ms]");
+             return null;
         }
-        String value = "" + tmpLocation.getLongitude();
 
-         LogWrapper.v(TAG, "tmpLocation.getAccuracy: " + tmpLocation.getAccuracy());
-         LogWrapper.v(TAG, "getLastLongitude: " + value + "; on " + new Date(tmpLocation.getTime()));
-         t0 = System.currentTimeMillis() - t0;
-         LogWrapper.v(TAG, t0 + "[ms]");
+        String value = "" + lastLocation.getLongitude();
 
-        // dont return default 0,0 values sometimes seen
-        if (tmpLocation.getLatitude() != 0f && tmpLocation.getLongitude() != 0) {
-            return value;
-        } else {
-            return null;
-        }
+        LogWrapper.v(TAG, "getAccuracy: " + lastLocation.getAccuracy());
+        LogWrapper.v(TAG, "getLastLongitude: " + value + "; on " + new Date(lastLocation.getTime()));
+        t0 = System.currentTimeMillis() - t0;
+        LogWrapper.v(TAG, t0 + "[ms]");
+        return value;
     }
 
     public static String getCoordinateTime(final Context appContext) {
-        long t0 = System.currentTimeMillis();
-        LogWrapper.v(TAG, "getLastCoordinates()");
-
-        LocationManager locationManager =
-                (LocationManager) appContext
-                        .getSystemService(Context.LOCATION_SERVICE);
-
-        // try to get the latest
-        Location tmpLocation =locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-
-        if (tmpLocation != null) {
-
-            String value = "" + tmpLocation.getTime();
-            if (tmpLocation.getLatitude() != 0f
-                    && tmpLocation.getLongitude() != 0) {
-                return value;
-            } else {
-                return null;
-            }
-        } else {
-            LogWrapper.v(TAG, t0 + "[ms]");
-            return null;
+    	long t0 = System.currentTimeMillis();
+        LogWrapper.v(TAG, "getCoordinateLongitude()");
+    	updateLocation(appContext);
+        
+        if (lastLocation == null) {
+        	 LogWrapper.v(TAG, t0 + "[ms]");
+             return null;
         }
+
+        String value = ""+lastLocation.getTime();
+        t0 = System.currentTimeMillis() - t0;
+        LogWrapper.v(TAG, t0 + "[ms]");
+        return value;
     }
 
     public static String getDevice() {
-
         long t0 = System.currentTimeMillis();
         LogWrapper.v(TAG, "getDevice()");
 
@@ -206,7 +180,6 @@ public class OTDataSockets {
     }
 
     public static String getIpAddress() {
-
         long t0 = System.currentTimeMillis();
         LogWrapper.v(TAG, "getIpAddress()");
         try {

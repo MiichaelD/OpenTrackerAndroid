@@ -43,16 +43,14 @@ public class OTLogService {
     private static Context appContext;
 
     private static String appName;
-
     private static String appServer = "app.opentracker.net";
+    private static final String FILE_TO_SEND = "fileToSend";
 
     // used for testing
     private static Boolean directSend = false;
-
-    private static Handler handler = new Handler();
-
     private static final Object lock = new Object();
-
+    private static Handler handler = new Handler();
+    
     // flag the first wifi event, to upload compressed data
     private static boolean isFirstWiFiEvent = true;
 
@@ -62,55 +60,28 @@ public class OTLogService {
 
     private static OTFileUtils otFileUtil;
 
-    // the time to lapse before creating a new session
+    // the time to lapse before creating a new session (30 mins)
     private static final int sessionLapseTimeMs = 30 * 60 * 1000; // m x s x ms
 
     private static final String TAG = OTLogService.class.getName();
 
-    private static void appendDataToFile(HashMap<String, String> keyValuePairs)
-            throws IOException {
+    @SuppressWarnings("deprecation")
+	private static void appendDataToFile(HashMap<String, String> keyValuePairs) throws IOException {
         LogWrapper.v(TAG, "appendDataToFile()");
 
-        // HashMap<String, String> map = otFileUtil.getFileNameDataPair();
-        // Iterator<Entry<String, String>> itAdditionalMap =
-        // additionalMap.entrySet().iterator();
-        // while (itAdditionalMap.hasNext()) {
-        // Map.Entry<String, String> pair =
-        // (Map.Entry<String, String>) itAdditionalMap.next();
-        // map.put(pair.getKey().toString(), pair.getValue().toString());
-        // }
-        // HttpPost post = new HttpPost(address);
         String urlQuery = "";
-
         keyValuePairs.put("t_ms", "" + System.currentTimeMillis());
 
         for (Map.Entry<String, String> entry : keyValuePairs.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
-            urlQuery += URLEncoder.encode(key) + "=" + URLEncoder.encode(value)
-                    + "&";
+            urlQuery += URLEncoder.encode(key) + "=" + URLEncoder.encode(value)+ "&";
         }
-
-        // Iterator<Entry<String, String>> it =
-        // additionalMap.entrySet().iterator();
-        // List<NameValuePair> pairs = new ArrayList<NameValuePair>();
-        // while (it.hasNext()) {
-        // Map.Entry<String, String> pair =
-        // (Map.Entry<String, String>) it.next();
-        // System.out.println(pair.getKey() + " = " + pair.getValue());
-        // pairs.add(new BasicNameValuePair(pair.getKey().toString(), pair
-        // .getValue().toString()));
-        // urlQuery +=
-        // pair.getKey().toString() + "="
-        // + URLEncoder.encode(pair.getValue().toString())
-        // + "&";
-        // }
-
         String url = OTSend.DEFAULT_LOG_URL + "?" + urlQuery;
         LogWrapper.i(TAG, "appending url:" + url);
         try {
-            otFileUtil.makeFile(OTFileUtils.UPLOAD_PATH, "fileToSend");
-            otFileUtil.appendToFile(OTFileUtils.UPLOAD_PATH, "fileToSend", url);
+            otFileUtil.makeFile(OTFileUtils.UPLOAD_PATH, FILE_TO_SEND);
+            otFileUtil.appendToFile(OTFileUtils.UPLOAD_PATH, FILE_TO_SEND, url);
         } catch (IOException e) {
             LogWrapper.e(TAG, "Exception while appending data to file: " + e);
 
@@ -125,17 +96,12 @@ public class OTLogService {
         // Do something long
         Runnable runnable = new Runnable() {
             public void run() {
-
                 try {
                     compressAndUploadData();
-                    handler.post(new Runnable() {
-                        public void run() {
-                        }
-                    });
+                    handler.post(new Runnable() { public void run() { } });
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-
             }
         };
         new Thread(runnable).start();
@@ -151,99 +117,63 @@ public class OTLogService {
      * events.
      */
     private static void compressAndUploadData() {
-
-        synchronized (lock/* Get */) {
-
-            long fileSizeBytes = 0;
-
-            try {
-                fileSizeBytes = otFileUtil.getFileSize(OTFileUtils.UPLOAD_PATH,
-                        "fileToSend");
-            } catch (IOException e) {
-                // ignore
-            }
-
-            if (fileSizeBytes != 0) {
-                LogWrapper.v(TAG, "compressAndUploadData()");
-            } else {
-                LogWrapper.v(TAG,
-                        "compressAndUploadData() escaping/ empty file");
-                return;
-            }
-
-            if (OTDataSockets.getNetworkType(appContext).equals(
-                    OTDataSockets.NO_NETWORK)) {
-                LogWrapper.e(TAG,
-                        "compressAndUploadData() escaping/ no network");
-                // no network, can't upload
-                return;
-            }
-
-            /*
-             * String[] fileContents = otFileUtil.readFileByLine("OTDir",
-             * "fileToSend"); for (int i = 0; i < fileContents.length; i++)
-             * OTSend.send(fileContents[i]);
-             */
-            // String[] fileContents;
-
-            LogWrapper.w(TAG, "compressAndUploadData() entering...");
-
-            try {
-
-                // remove any hanging files
-                otFileUtil.removeFile(OTFileUtils.UPLOAD_PATH, "fileToSend.gz");
-
-                // LogWrapper.e(TAG, "1 "
-                // + otFileUtil.listFiles(OTFileUtils.UPLOAD_PATH).length);
-
-                otFileUtil.compressFile(OTFileUtils.UPLOAD_PATH, "fileToSend");
-
-                // LogWrapper.e(TAG, "2 "
-                // + otFileUtil.listFiles(OTFileUtils.UPLOAD_PATH).length);
-
-                long time1 = System.currentTimeMillis();
-                boolean success = OTSend.uploadFile(
-                        otFileUtil.getInternalPath(OTFileUtils.UPLOAD_PATH),
-                        "fileToSend.gz");
-
-                long time2 = System.currentTimeMillis();
-                Log.v(TAG, "Time taken to upload: " + (time2 - time1) + " [ms]");
-                if (success) {
-                    LogWrapper.v(TAG, "Clearing files");
-
-                    otFileUtil.removeFile(OTFileUtils.UPLOAD_PATH,
-                            "fileToSend.gz");
-                    otFileUtil.emptyFile(OTFileUtils.UPLOAD_PATH, "fileToSend");
-
-                    // wait 10 seconds for things to settle on the server side
-                    // this will block threads using the lock object
-                    try {
-                        Thread.sleep(GRACE_PERIOD_UPLOAD_MS);
-                    } catch (InterruptedException e) {
-                        LogWrapper.e(TAG, "InterruptedException: " + e);
-                    }
-
-                } else {
-                    LogWrapper.i(TAG,
-                            "File upload did not succeed, re-appending!");
-                    otFileUtil.removeFile(OTFileUtils.UPLOAD_PATH,
-                            "fileToSend.gz");
-                }
-            } catch (FileNotFoundException fnfe) {
-                // nothing to do
-                LogWrapper.e(TAG, "File not found!");
-            } catch (IOException e) {
-                LogWrapper.e(TAG, "IOException!");
-                // e.printStackTrace();
-            }
-            // LogWrapper.e(TAG, "3 " +
-            // otFileUtil.listFiles(OTFileUtils.UPLOAD_PATH).length);
-        }// lock
+    	synchronized (lock/* Get */) {
+	        long fileSizeBytes = 0;
+	        try {
+	            fileSizeBytes = otFileUtil.getFileSize(OTFileUtils.UPLOAD_PATH, FILE_TO_SEND);
+	        } catch (IOException e) { /*ignore*/}
+	
+	        if (fileSizeBytes != 0) {
+	            LogWrapper.v(TAG, "compressAndUploadData()");
+	        } else {
+	            LogWrapper.v(TAG,"compressAndUploadData() escaping/ empty file");
+	            return;
+	        }
+	
+	        if (OTDataSockets.getNetworkType(appContext).equals(OTDataSockets.NO_NETWORK)) {
+	            LogWrapper.e(TAG, "compressAndUploadData() escaping/ no network");
+	            return;
+	        }
+	
+	        LogWrapper.v(TAG, "compressAndUploadData() entering...");
+	        try {
+	            // remove any hanging files
+	            otFileUtil.removeFile(OTFileUtils.UPLOAD_PATH, FILE_TO_SEND +".gz");
+	//             LogWrapper.v(TAG, "1 num of files to send: " + otFileUtil.listFiles(OTFileUtils.UPLOAD_PATH).length);
+	            otFileUtil.compressFile(OTFileUtils.UPLOAD_PATH, FILE_TO_SEND);
+	//             LogWrapper.v(TAG, "2 we created a new one, new count:" + otFileUtil.listFiles(OTFileUtils.UPLOAD_PATH).length);
+	
+	            long time1 = System.currentTimeMillis();
+	            boolean success = OTSend.uploadFile(otFileUtil.getInternalPath(OTFileUtils.UPLOAD_PATH), FILE_TO_SEND + ".gz");
+	
+	            long time2 = System.currentTimeMillis();
+	            Log.v(TAG, "Time taken to upload: " + (time2 - time1) + " [ms]");
+	            if (success) {
+	                LogWrapper.v(TAG, "Clearing files");
+	
+	                otFileUtil.removeFile(OTFileUtils.UPLOAD_PATH, FILE_TO_SEND + ".gz");
+	                otFileUtil.emptyFile(OTFileUtils.UPLOAD_PATH, FILE_TO_SEND);
+	
+	                // wait 10 seconds for things to settle on the server side
+	                // this will block threads using the lock object
+	                try {
+	                    Thread.sleep(GRACE_PERIOD_UPLOAD_MS);
+	                } catch (InterruptedException e) {
+	                    LogWrapper.e(TAG, "InterruptedException: " + e);
+	                }
+	
+	            } else {
+	                LogWrapper.i(TAG, "File upload did not succeed, re-appending!");
+	                otFileUtil.removeFile(OTFileUtils.UPLOAD_PATH, FILE_TO_SEND + ".gz");
+	            }
+	        } catch (FileNotFoundException fnfe) {
+	            LogWrapper.e(TAG, "File not found!");
+	        } catch (IOException e) {
+	            LogWrapper.e(TAG, "IOException!");
+	        }
+        // LogWrapper.e(TAG, "3 " + otFileUtil.listFiles(OTFileUtils.UPLOAD_PATH).length);
+    	}
     }
-
-    // public static void endSession() {
-    // LogWrapper.v(TAG, "endSession()");
-    // }
 
     /**
      * Get the app name being logged by Opentracker's logging/ analytics engines
@@ -291,11 +221,6 @@ public class OTLogService {
         LogWrapper.v(TAG, "onPause()");
         compressAndUploadDataTask();
     }
-
-    // public static void sendEvent(HashMap<String, String> keyValuePairs) {
-    // LogWrapper.v(TAG, "sendEvent()");
-    // sendEvent(keyValuePairs, true);
-    // }
 
     /**
      * Registers data related to this session and/ or user. Method ensures this
@@ -404,20 +329,11 @@ public class OTLogService {
                 try {
                     // parse the user data
                     randomNumberClient = Integer.parseInt(userData[0]);
-
-                    firstSessionStartUnixTimestamp = Long
-                            .parseLong(userData[1]);
-
-                    previousSessionStartUnixTimestamp = Long
-                            .parseLong(userData[2]);
-
-                    currentSessionStartUnixTimestamp = Long
-                            .parseLong(userData[3]);
-
+                    firstSessionStartUnixTimestamp = Long.parseLong(userData[1]);
+                    previousSessionStartUnixTimestamp = Long.parseLong(userData[2]);
+                    currentSessionStartUnixTimestamp = Long.parseLong(userData[3]);
                     sessionCount = Integer.parseInt(userData[4]);
-
                     lifeTimeEventCount = Integer.parseInt(userData[5]);
-
                     // update the event count
                     lifeTimeEventCount++;
 
@@ -451,13 +367,9 @@ public class OTLogService {
             // initialize the data
             String[] sessionData = otSessionData.split("\\.");
             if (sessionData.length != 4) {
-
                 // data is corrupted, using initialized data
-
-                LogWrapper
-                        .i(TAG, "Data is corrupted length: "
-                                + sessionData.length + ", sessionData:"
-                                + otSessionData);
+                LogWrapper.i(TAG, "Data is corrupted length: "
+                       + sessionData.length + ", sessionData:" + otSessionData);
 
                 HashMap<String, String> logMap = new HashMap<String, String>();
                 logMap.put("si", "errors"); // log to error appName
@@ -465,7 +377,6 @@ public class OTLogService {
                 OTSend.send(logMap);
 
             } else {
-
                 try {
 
                     // as per
@@ -479,21 +390,15 @@ public class OTLogService {
                     long diff = (currentUnixTimestampMs - previousEventUnixTimestamp);
 
                     // LogWrapper.e(TAG, "Got: " + diff + "[ms]");
-                    // LogWrapper.e(TAG, "Got currentUnixTimestampMs: "
-                    // + currentUnixTimestampMs + "[ms]");
-                    // LogWrapper.e(TAG, "Got previousEventUnixTimestamp: "
-                    // + previousEventUnixTimestamp + "[ms]");
+                    // LogWrapper.e(TAG, "Got currentUnixTimestampMs: " + currentUnixTimestampMs + "[ms]");
+                    // LogWrapper.e(TAG, "Got previousEventUnixTimestamp: "+ previousEventUnixTimestamp + "[ms]");
 
-                    // make sure we have a ongoing session
+                    // make sure we have an ongoing session
                     if (diff < sessionLapseTimeMs) {
-
                         LogWrapper.d(TAG, "Continuing session.");
-
                         // ongoing session, parse the session data
                         sessionEventCount = Integer.parseInt(sessionData[0]);
-
-                        // currentSessionStartUnixTimestamp =
-                        // Long.parseLong(sessionData[1]);
+                        // currentSessionStartUnixTimestamp = Long.parseLong(sessionData[1]);
 
                         // do the work, to start a new event
                         sessionEventCount++;
@@ -504,9 +409,7 @@ public class OTLogService {
                     }
 
                 } catch (Exception e) {
-
                     LogWrapper.w(TAG, "ots has corrupted data: " + e);
-
                     HashMap<String, String> logMap = new HashMap<String, String>();
                     logMap.put("si", "errors"); // log to error appName
                     logMap.put("message", getStackTrace(e));
@@ -534,8 +437,7 @@ public class OTLogService {
             }
         }
 
-        otSessionData = sessionEventCount + "."
-                + currentSessionStartUnixTimestamp + "."
+        otSessionData = sessionEventCount + "." + currentSessionStartUnixTimestamp + "."
                 + previousEventUnixTimestamp + "." + currentUnixTimestampMs;
 
         try {
@@ -587,13 +489,11 @@ public class OTLogService {
         sendEvent(eventName, true);
     }
 
-    public static void sendEvent(String eventName,
-            boolean appendSessionStateData) {
+    public static void sendEvent(String eventName, boolean appendSessionStateData) {
         sendEvent(eventName, null, appendSessionStateData);
     }
 
-    public static void sendEvent(String eventName,
-            HashMap<String, String> keyValuePairs) {
+    public static void sendEvent(String eventName, HashMap<String, String> keyValuePairs) {
         sendEvent(eventName, keyValuePairs, true);
     }
 
@@ -601,16 +501,12 @@ public class OTLogService {
         sendEvent(null, keyValuePairs, true);
     }
 
-    public static void sendEvent(String eventName,
-            HashMap<String, String> keyValuePairs,
-            boolean appendSessionStateData) {
+    public static void sendEvent(String eventName, HashMap<String, String> keyValuePairs, boolean appendSessionStateData) {
         long t0 = System.currentTimeMillis();
-        LogWrapper.v(TAG, "sendEvent(" + eventName + ",  "
-                + appendSessionStateData + ", " + keyValuePairs + ")");
+        LogWrapper.v(TAG, "sendEvent(" + eventName + ",  " + appendSessionStateData + ", " + keyValuePairs + ")");
 
         // if we are on wifi then start separate thread otherwise
-        if (OTDataSockets.getNetworkType(appContext).equalsIgnoreCase(
-                OTDataSockets.WIFI)) {
+        if (OTDataSockets.getNetworkType(appContext).equalsIgnoreCase(OTDataSockets.WIFI)) {
 
             // use this wifi event to upload the file
             if (isFirstWiFiEvent) {
@@ -631,188 +527,166 @@ public class OTLogService {
     }
 
     /*
-     * Method is synchronized with compressAndUploadData through a private lock
+     * Method is synchronized with compressAndUploadData through a private 
      * object. This is to ensure that two threads will not process network/
      * information events.
      */
     private static final void processEvent(String eventName,
-            HashMap<String, String> keyValuePairs,
-            boolean appendSessionStateData) {
-
-        synchronized (lock/* Get */) {
-
-            LogWrapper.d(TAG, "processEvent(" + eventName + ",  "
-                    + appendSessionStateData + ", " + keyValuePairs + ")");
-
-            if (keyValuePairs == null)
-                keyValuePairs = new HashMap<String, String>();
- 
-            // ti is default title tag
-            if (eventName == null) {
-                if (keyValuePairs.get("title") == null
-                        && keyValuePairs.get("ti") == null) {
-                    keyValuePairs.put("ti", "[No title]");
-                } else {
-                    keyValuePairs.put("ti", keyValuePairs.get("title"));
-                    keyValuePairs.remove("title");
-                }
-            } else {
-                keyValuePairs.put("ti", eventName);
-            }
-            // update the sessionData
-            // int eventCount =
-            registerSessionEvent();
-            // LogWrapper.v(TAG, "eventCount: " + eventCount);
-
-            keyValuePairs.put("si", appName);
-            keyValuePairs.put("connection",
-                    OTDataSockets.getNetworkType(appContext));
-            keyValuePairs.put("platform", OTDataSockets.getPlatform());
-            keyValuePairs.put("platform version",
-                    OTDataSockets.getPlatformVersion());
-
-            if (!keyValuePairs.containsKey("browser"))
-                keyValuePairs.put("browser", "Android Native App");
-
-            if (!keyValuePairs.containsKey("browser version"))
-                keyValuePairs.put("browser version",
-                        OTDataSockets.getAppVersion(appContext));
-
-            keyValuePairs.put("device", OTDataSockets.getDevice());
-            keyValuePairs.put("sh", OTDataSockets.getScreenHeight(appContext));
-            keyValuePairs.put("sw", OTDataSockets.getScreenWidth(appContext));
-            keyValuePairs.put("version name",
-                    OTDataSockets.getAppVersion(appContext));
-
-            String lc;
-            if (keyValuePairs.get("lc") != null) {
-                lc = keyValuePairs.get("lc");
-            } else if (keyValuePairs.get("url") != null) {
-                lc = keyValuePairs.get("url");
-                keyValuePairs.remove("url");
-                keyValuePairs.put("lc", lc);
-            } else {
-                if (appServer.equals("")) {
-                    lc = "";
-                } else {
-                    lc = "http://" + appServer + "/" + appName + "#"
-                            + eventName.replace('/', '.');
-                }
-                keyValuePairs.put("lc", lc);
-            }
-
-            // add this location as a previous event. The otpe key is used to
-            // keep track of the previous event. This event is needed to measure
-            // the amount of time the previous event has taken. This is
-            // calculated from getting the current event's timestamp and
-            // substracking the previous event's timestamp on the
-            // log.opentracker.net server"
-            String otpe = "";
-            try {
-                otpe = otFileUtil.readFile("otpe");
-            } catch (IOException e) {
-                LogWrapper.i(TAG, "Could not read previous event: " + e);
-            }
-            if (otpe != null && otpe.length() > 0) {
-                keyValuePairs.put("otpe", otpe);
-            }
-
-            try {
-                otFileUtil.writeFile("otpe", lc);
-            } catch (IOException e) {
-                LogWrapper.i(TAG, "Could not write previous event: " + e);
-            }
-
-            keyValuePairs.put("revision", OTSvnVersion.getRevision());
-
-            // debug
-            // String[] userData = null;
-            // try {
-            // userData = otFileUtil.readFile("otui").split("\\.");
-            // } catch (IOException e) {
-            // }
-            // int lifeTimeEventCount = Integer.parseInt(userData[5]);
-            //
-            // keyValuePairs
-            // .put("ti", eventName + " (" + lifeTimeEventCount + ")");
-
-            String location = OTDataSockets.getCoordinateLatitude(appContext);
-            if (location != null) {
-                keyValuePairs.put("latitude", location);
-                keyValuePairs.put("longitude",
-                        OTDataSockets.getCoordinateLongitude(appContext));
-                keyValuePairs.put("coordinateAccuracy",
-                        OTDataSockets.getCoordinateAccuracy(appContext));
-                keyValuePairs.put("coordinateTime",
-                        OTDataSockets.getCoordinateTime(appContext));
-            }
-
-            String locale = OTDataSockets.getLocale(appContext);
-            if (locale != null) {
-                keyValuePairs.put("locale", locale);
-            }
-
-            String carrier = OTDataSockets.getCarrier(appContext);
-            if (carrier != null) {
-                keyValuePairs.put("carrier", carrier);
-            }
-
-            if (appendSessionStateData) {
-                HashMap<String, String> dataFiles = null;
-                try {
-                    dataFiles = otFileUtil.getSessionStateDataPairs();
-                } catch (IOException e) {
-
-                    LogWrapper.w(TAG,
-                            "Exception while getting fileName data pairs");
-
-                    HashMap<String, String> logMap = new HashMap<String, String>();
-                    logMap.put("si", "errors"); // log to error appName
-                    logMap.put("message", getStackTrace(e));
-                    OTSend.send(logMap);
-
-                }
-                if (dataFiles != null)
-                    keyValuePairs.putAll(dataFiles);
-            }
-
-            // done: worked out logic of appending data to file
-            // LogWrapper.v(TAG, "directSend: " + directSend + ", "
-            // + OTDataSockets.getNetworkType(appContext));
-            try {
-                // use success to determine if information was really sent
-                // null if not, otherwise the response string from server
-                String success = null;
-                if (OTDataSockets.getNetworkType(appContext).equalsIgnoreCase(
-                        OTDataSockets.WIFI)) {
-                    LogWrapper.i(TAG, "sending: " + keyValuePairs);
-
-                    success = OTSend.send(keyValuePairs);
-                } else if (directSend) {
-                    LogWrapper.i(TAG, "sending: " + keyValuePairs);
-
-                    success = OTSend.send(keyValuePairs);
-                } else {
-                    LogWrapper.i(TAG, "appending: " + keyValuePairs);
-                    success = "yes";
-                    appendDataToFile(keyValuePairs);
-                }
-                if (success == null) {
-                    LogWrapper.w(TAG, "appending to file, network down?");
-                    appendDataToFile(keyValuePairs);
-
-                    // TODO try uploading file?
-                }
-
-            } catch (Exception e) {
-                try {
-                    appendDataToFile(keyValuePairs);
-                } catch (IOException e1) {
-                    LogWrapper.w(TAG, "appending to file, network errors?");
-                }
-            }
-        }
-
+            HashMap<String, String> keyValuePairs, boolean appendSessionStateData) {
+    	synchronized (lock/* Get */) {
+	        LogWrapper.d(TAG, "processEvent("+eventName+",  "+appendSessionStateData+", "+keyValuePairs+")");
+	
+	        if (keyValuePairs == null)
+	            keyValuePairs = new HashMap<String, String>();
+	 
+	            // ti is default title tag
+	        if (eventName == null) {
+	            if (keyValuePairs.get("title") == null && keyValuePairs.get("ti") == null) {
+	                keyValuePairs.put("ti", "[No title]");
+	            } else {
+	                keyValuePairs.put("ti", keyValuePairs.get("title"));
+	                keyValuePairs.remove("title");
+	            }
+	        } else {
+	            keyValuePairs.put("ti", eventName);
+	        }
+	        // update the sessionData
+	        // int eventCount =
+	        registerSessionEvent();
+	        // LogWrapper.v(TAG, "eventCount: " + eventCount);
+	
+	        keyValuePairs.put("si", appName);
+	        keyValuePairs.put("connection",OTDataSockets.getNetworkType(appContext));
+	        keyValuePairs.put("platform", OTDataSockets.getPlatform());
+	        keyValuePairs.put("platform version",OTDataSockets.getPlatformVersion());
+	
+	        if (!keyValuePairs.containsKey("browser"))
+	            keyValuePairs.put("browser", "Android Native App");
+	
+	        if (!keyValuePairs.containsKey("browser version"))
+	            keyValuePairs.put("browser version", OTDataSockets.getAppVersion(appContext));
+	
+	        keyValuePairs.put("device", OTDataSockets.getDevice());
+	        keyValuePairs.put("sh", OTDataSockets.getScreenHeight(appContext));
+	        keyValuePairs.put("sw", OTDataSockets.getScreenWidth(appContext));
+	        keyValuePairs.put("version name", OTDataSockets.getAppVersion(appContext));
+	
+	        String lc;
+	        if (keyValuePairs.get("lc") != null) {
+	            lc = keyValuePairs.get("lc");
+	        } else if (keyValuePairs.get("url") != null) {
+	            lc = keyValuePairs.get("url");
+	            keyValuePairs.remove("url");
+	            keyValuePairs.put("lc", lc);
+	        } else {
+	            if (appServer.equals("")) {
+	                lc = "";
+	            } else {
+	                lc = "http://" + appServer + "/" + appName + "#"+ eventName.replace('/', '.');
+	            }
+	            keyValuePairs.put("lc", lc);
+	        }
+	
+	        // add this location as a previous event. The otpe key is used to
+	        // keep track of the previous event. This event is needed to measure
+	        // the amount of time the previous event has taken. This is
+	        // calculated from getting the current event's timestamp and
+	        // substracking the previous event's timestamp on the
+	        // log.opentracker.net server"
+	        String otpe = "";
+	        try {
+	            otpe = otFileUtil.readFile("otpe");
+	        } catch (IOException e) {
+	            LogWrapper.i(TAG, "Could not read previous event: " + e);
+	        }
+	        if (otpe != null && otpe.length() > 0) {
+	            keyValuePairs.put("otpe", otpe);
+	        }
+	
+	        try {
+	            otFileUtil.writeFile("otpe", lc);
+	        } catch (IOException e) {
+	            LogWrapper.i(TAG, "Could not write previous event: " + e);
+	        }
+	
+	        keyValuePairs.put("revision", OTSvnVersion.getRevision());
+	
+	        // debug
+	        // String[] userData = null;
+	        // try {
+	        // userData = otFileUtil.readFile("otui").split("\\.");
+	        // } catch (IOException e) {
+	        // }
+	        // int lifeTimeEventCount = Integer.parseInt(userData[5]);
+	        //
+	        // keyValuePairs
+	        // .put("ti", eventName + " (" + lifeTimeEventCount + ")");
+	
+	        String location = OTDataSockets.getCoordinateLatitude(appContext);
+	        if (location != null) {
+	            keyValuePairs.put("latitude", location);
+	            keyValuePairs.put("longitude", OTDataSockets.getCoordinateLongitude(appContext));
+	            keyValuePairs.put("coordinateAccuracy", OTDataSockets.getCoordinateAccuracy(appContext));
+	            keyValuePairs.put("coordinateTime", OTDataSockets.getCoordinateTime(appContext));
+	        }
+	
+	        String locale = OTDataSockets.getLocale(appContext);
+	        if (locale != null) {
+	            keyValuePairs.put("locale", locale);
+	        }
+	
+	        String carrier = OTDataSockets.getCarrier(appContext);
+	        if (carrier != null) {
+	            keyValuePairs.put("carrier", carrier);
+	        }
+	
+	        if (appendSessionStateData) {
+	            HashMap<String, String> dataFiles = null;
+	            try {
+	                dataFiles = otFileUtil.getSessionStateDataPairs();
+	            } catch (IOException e) {
+	
+	                LogWrapper.w(TAG, "Exception while getting fileName data pairs");
+	
+	                HashMap<String, String> logMap = new HashMap<String, String>();
+	                logMap.put("si", "errors"); // log to error appName
+	                logMap.put("message", getStackTrace(e));
+	                OTSend.send(logMap);
+	
+	            }
+	            if (dataFiles != null)
+	                keyValuePairs.putAll(dataFiles);
+	        }
+	
+	        // done: worked out logic of appending data to file
+	        // LogWrapper.v(TAG, "directSend: " + directSend + ", "
+	        // + OTDataSockets.getNetworkType(appContext));
+	        try {
+	            // use success to determine if information was really sent
+	            // null if not, otherwise the response string from server
+	            String success = null;
+	            if (OTDataSockets.getNetworkType(appContext).equalsIgnoreCase(OTDataSockets.WIFI) || directSend) {
+	                LogWrapper.i(TAG, "sending: " + keyValuePairs);
+	                success = OTSend.send(keyValuePairs);
+	            } else {
+	                LogWrapper.i(TAG, "appending: " + keyValuePairs);
+	                success = "yes";
+	                appendDataToFile(keyValuePairs);
+	            }
+	            if (success == null) {
+	                LogWrapper.w(TAG, "appending to file, network down?");
+	                appendDataToFile(keyValuePairs);
+	                // TODO try uploading file?
+	            }
+	
+	        } catch (Exception e) {
+	            try {
+	                appendDataToFile(keyValuePairs);
+	            } catch (IOException e1) {
+	                LogWrapper.w(TAG, "appending to file, network errors?");
+	            }
+	        }
+    	}
     }
 
     private static void sendTask(final String event,

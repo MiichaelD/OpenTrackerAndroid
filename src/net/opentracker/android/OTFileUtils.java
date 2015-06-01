@@ -241,11 +241,8 @@ public class OTFileUtils {
 
         File dir = new File(appContext.getFilesDir() + sessionStateDirectory);
         String[] children = dir.list();
-        HashMap<String, String> fileNameDataPair =
-                new HashMap<String, String>();
-        if (children == null) {
-            // Either dir does not exist or is not a directory
-        } else {
+        HashMap<String, String> fileNameDataPair = new HashMap<String, String>();
+        if (children != null) { // Dir does exist     
             for (int i = 0; i < children.length; i++) {
                 // Get filename of file or directory
                 String filename = children[i];
@@ -254,7 +251,6 @@ public class OTFileUtils {
             }
         }
         LogWrapper.v(TAG, "getSessionStateDataPairs(): " + fileNameDataPair);
-
         return fileNameDataPair;
     }
 
@@ -490,7 +486,8 @@ public class OTFileUtils {
 
         File file = getFile(pathName,fileName);
         String internalPath = appContext.getFilesDir() + pathName;
-    	LogWrapper.i(TAG, "internalPath: "+internalPath+", pathName: "+pathName+", filename: "+fileName+", fileAbs: "+file.getAbsolutePath()+", str: "+writeString);
+    	LogWrapper.i(TAG, "internalPath: "+internalPath+", pathName: "+pathName+
+    			", filename: "+fileName+", fileAbs: "+file.getAbsolutePath()+", str: "+writeString);
         if (file != null) {
             try {
                 FileWriter writer = new FileWriter(file);
