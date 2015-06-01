@@ -145,7 +145,7 @@ public class OTFileUtils {
             in.close();
             gzos.close();
 
-            File fileGz = new File(file.getAbsolutePath() + gzipFileName);
+            File fileGz = new File(getInternalPath(pathName) + gzipFileName);
             LogWrapper.v(TAG, "File is in now gzip format, size:"
                     + fileGz.length() + "[bytes] from  " + file.length()
                     + "[bytes]");
@@ -207,10 +207,9 @@ public class OTFileUtils {
     public void emptyFile(String pathName, String fileName) throws IOException {
         long t0 = System.currentTimeMillis();
         LogWrapper.v(TAG, "emptyFile()");
-        File file = getFile(pathName,fileName);
         FileOutputStream erasor;
         try {
-            erasor = new FileOutputStream(file.getAbsolutePath() + fileName);
+            erasor = new FileOutputStream(getInternalPath(pathName) + fileName);
             erasor.write(new byte[0]);
             erasor.close();
         } catch (FileNotFoundException e) {
@@ -293,7 +292,7 @@ public class OTFileUtils {
 
         // Otherwise, create any necessary directories, and the file itself.
         try {
-            new File(file.getAbsolutePath()).mkdirs();
+            new File(getInternalPath(pathName)).mkdirs();
             if (file.createNewFile()) {
                 return;
             }
@@ -348,8 +347,7 @@ public class OTFileUtils {
             String result = content.toString().replaceAll("\0", "").trim();
             reader.close();
 
-            LogWrapper.v(TAG, "The following data has been read from "
-                    + file.getAbsolutePath() + fileName + ": " + result);
+            LogWrapper.v(TAG, "The following data has been read from " + file.getAbsolutePath() + ": " + result);
 
             return result;
 
@@ -423,9 +421,7 @@ public class OTFileUtils {
         try {
             // If it did exist, the file contains the ID.
             final int bufferSize = 100;
-            BufferedReader reader =
-                    new BufferedReader(new InputStreamReader(
-                            new FileInputStream(file), "UTF-8"), bufferSize);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"), bufferSize);
             String line = null;
             while ((line = reader.readLine()) != null) {
                 fileLines.add(line);
@@ -490,8 +486,11 @@ public class OTFileUtils {
      *             If a file could not be written, or any parameters are null
      */
     public void writeFile(String pathName, String fileName, String writeString) throws IOException {
-        LogWrapper.v(TAG, "writeFile(String pathName, String fileName, String writeString)");
+    	LogWrapper.v(TAG, "writeFile(String pathName, String fileName, String writeString)");
+
         File file = getFile(pathName,fileName);
+        String internalPath = appContext.getFilesDir() + pathName;
+    	LogWrapper.i(TAG, "internalPath: "+internalPath+", pathName: "+pathName+", filename: "+fileName+", fileAbs: "+file.getAbsolutePath()+", str: "+writeString);
         if (file != null) {
             try {
                 FileWriter writer = new FileWriter(file);
@@ -504,9 +503,7 @@ public class OTFileUtils {
             }
             return;
         }
-        throw new IOException("Cannot write to file: " + fileName);
     }
-    
     
     private File getFile(String pathName, String fileName) throws IOException{
     	if (pathName == null || fileName == null) {
@@ -515,7 +512,7 @@ public class OTFileUtils {
             throw new IOException("pathName and/ or fileName is null");
         }
 
-        String internalPath = appContext.getFilesDir() + pathName;
+        String internalPath = getInternalPath(pathName);
         return new File(internalPath + fileName);
     }
 
