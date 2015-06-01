@@ -36,27 +36,27 @@ public class LogWrapper {
     private static final LogLevel m_logLevel = LogLevel.kVerbose;
 
     public static void v(String tag, Object msg) {
-        if (m_logLevel.compareTo(LogLevel.kVerbose) >= 0)
+        if (m_logLevel.compareTo(LogLevel.kVerbose) <= 0)
             Log.v(tag, msg.toString());
     }
 
     public static void d(String tag, Object msg) {
-        if (m_logLevel.compareTo(LogLevel.kDebug) >= 0)
+        if (m_logLevel.compareTo(LogLevel.kDebug) <= 0)
             Log.v(tag, msg.toString());
     }
 
     public static void i(String tag, Object msg) {
-        if (m_logLevel.compareTo(LogLevel.kInfo) >= 0)
+        if (m_logLevel.compareTo(LogLevel.kInfo) <= 0)
             Log.i(tag, msg.toString());
     }
 
     public static void w(String tag, Object msg) {
-        if (m_logLevel.compareTo(LogLevel.kWarn) >= 0)
+        if (m_logLevel.compareTo(LogLevel.kWarn) <= 0)
             Log.w(tag, msg.toString());
     }
 
     public static void e(String tag, Object msg) {
-        if (m_logLevel.compareTo(LogLevel.kError) >= 0)
+        if (m_logLevel.compareTo(LogLevel.kError) <= 0)
             Log.e(tag, msg.toString());
     }
 }
