@@ -154,7 +154,7 @@ public class OTDataSockets {
 
     public static String getCoordinateTime(final Context appContext) {
     	long t0 = System.currentTimeMillis();
-        LogWrapper.v(TAG, "getCoordinateLongitude()");
+        LogWrapper.v(TAG, "getCoordinateTime()");
     	updateLocation(appContext);
         
         if (lastLocation == null) {
