@@ -22,6 +22,7 @@ package net.opentracker.android;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 
@@ -47,20 +48,17 @@ import android.webkit.WebView;
  */
 public class OTDataSockets {
 
-    // TODO: return wifi, mobile or airplane.
-    @SuppressWarnings("unchecked")
-    private static HashMap cacheType = new HashMap();
+    @SuppressWarnings("rawtypes")
+	private static HashMap cacheType = new HashMap();
 
     // ten seconds
-    private static final long NETWORK_CACHE_MS = 100l;// = 1 / 6 * 1000l * 60l;
-
+    private static final long NETWORK_CACHE_MS = 10000l;// = 1 / 6 * 1000l * 60l;
     public static final String NO_NETWORK = "no network";
-
     private static final String TAG = OTDataSockets.class.getName();
 
     // private static OTLocationService locationService = null;
 
-    public static final String WIFI = "Wi-Fi";
+    public static final String WIFI = "WIFI";
 
     /**
      * Gets the pretty string for this application's version name as defined in
@@ -71,18 +69,14 @@ public class OTDataSockets {
      * @return The application's version as a pretty string
      */
     public static String getAppVersion(final Context appContext) {
-
         long t0 = System.currentTimeMillis();
         LogWrapper.v(TAG, "getAppVersion()");
         PackageManager pm = appContext.getPackageManager();
-
         try {
-
             t0 = System.currentTimeMillis() - t0;
             LogWrapper.v(TAG, t0 + "[ms]");
             return pm.getPackageInfo(appContext.getPackageName(), 0).versionName;
         } catch (PackageManager.NameNotFoundException e) {
-
             t0 = System.currentTimeMillis() - t0;
             LogWrapper.v(TAG, t0 + "[ms]");
             return "unknown";
@@ -93,32 +87,25 @@ public class OTDataSockets {
         long t0 = System.currentTimeMillis();
         LogWrapper.v(TAG, "getLastCoordinates()");
 
-        LocationManager locationManager =
-                (LocationManager) appContext
-                        .getSystemService(Context.LOCATION_SERVICE);
+        LocationManager locationManager = (LocationManager) appContext.getSystemService(Context.LOCATION_SERVICE);
 
         // try to get the latest
-        Location tmpLocation =
-                locationManager
-                        .getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        Location tmpLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
 
-        if (tmpLocation != null) {
+        if (tmpLocation == null) {
+        	 LogWrapper.v(TAG, t0 + "[ms]");
+             return null;
+        }
 
-            String value = "" + tmpLocation.getAccuracy();
-            // LogWrapper.v(TAG, "getLastCoordinates: " + coordinates + "; "
-            // + new Date(tmpLocation.getTime()));
-            // t0 = System.currentTimeMillis() - t0;
-            // LogWrapper.v(TAG, t0 + "[ms]");
+        String value = "" + tmpLocation.getAccuracy();
+        LogWrapper.v(TAG, "getCoordinateAccuracy: " + value + "; on " + new Date(tmpLocation.getTime()));
+        t0 = System.currentTimeMillis() - t0;
+        LogWrapper.v(TAG, t0 + "[ms]");
 
-            // dont return default 0,0 values sometimes seen
-            if (tmpLocation.getLatitude() != 0f
-                    && tmpLocation.getLongitude() != 0) {
-                return value;
-            } else {
-                return null;
-            }
+        // dont return default 0,0 values sometimes seen
+        if (tmpLocation.getLatitude() != 0f && tmpLocation.getLongitude() != 0) {
+            return value;
         } else {
-            LogWrapper.v(TAG, t0 + "[ms]");
             return null;
         }
     }
@@ -127,35 +114,27 @@ public class OTDataSockets {
         long t0 = System.currentTimeMillis();
         LogWrapper.v(TAG, "getLastCoordinates()");
 
-        LocationManager locationManager =
-                (LocationManager) appContext
-                        .getSystemService(Context.LOCATION_SERVICE);
+        LocationManager locationManager = (LocationManager) appContext.getSystemService(Context.LOCATION_SERVICE);
 
         // try to get the latest
-        Location tmpLocation =
-                locationManager
-                        .getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        Location tmpLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
 
-        if (tmpLocation != null) {
+        if (tmpLocation == null) {
+        	LogWrapper.v(TAG, t0 + "[ms]");
+            return null;
+        }
 
-            String value = "" + tmpLocation.getLatitude();
+        String value = "" + tmpLocation.getLatitude();
 
-            // LogWrapper.v(TAG, "tmpLocation.getAccuracy: " +
-            // tmpLocation.getAccuracy());
-            // LogWrapper.v(TAG, "getLastCoordinates: " + coordinates + "; "
-            // + new Date(tmpLocation.getTime()));
-            // t0 = System.currentTimeMillis() - t0;
-            // LogWrapper.v(TAG, t0 + "[ms]");
+         LogWrapper.v(TAG, "tmpLocation.getAccuracy: " + tmpLocation.getAccuracy());
+         LogWrapper.v(TAG, "getLastLatitude: " + value + "; on " + new Date(tmpLocation.getTime()));
+         t0 = System.currentTimeMillis() - t0;
+         LogWrapper.v(TAG, t0 + "[ms]");
 
-            // dont return default 0,0 values sometimes seen
-            if (tmpLocation.getLatitude() != 0f
-                    && tmpLocation.getLongitude() != 0) {
-                return value;
-            } else {
-                return null;
-            }
+        // dont return default 0,0 values sometimes seen
+        if (tmpLocation.getLatitude() != 0f && tmpLocation.getLongitude() != 0) {
+            return value;
         } else {
-            LogWrapper.v(TAG, t0 + "[ms]");
             return null;
         }
     }
@@ -164,35 +143,26 @@ public class OTDataSockets {
         long t0 = System.currentTimeMillis();
         LogWrapper.v(TAG, "getLastCoordinates()");
 
-        LocationManager locationManager =
-                (LocationManager) appContext
-                        .getSystemService(Context.LOCATION_SERVICE);
+        LocationManager locationManager = (LocationManager) appContext.getSystemService(Context.LOCATION_SERVICE);
 
         // try to get the latest
-        Location tmpLocation =
-                locationManager
-                        .getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        Location tmpLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
 
-        if (tmpLocation != null) {
-
-            String value = "" + tmpLocation.getLongitude();
-
-            // LogWrapper.v(TAG, "tmpLocation.getAccuracy: " +
-            // tmpLocation.getAccuracy());
-            // LogWrapper.v(TAG, "getLastCoordinates: " + coordinates + "; "
-            // + new Date(tmpLocation.getTime()));
-            // t0 = System.currentTimeMillis() - t0;
-            // LogWrapper.v(TAG, t0 + "[ms]");
-
-            // dont return default 0,0 values sometimes seen
-            if (tmpLocation.getLatitude() != 0f
-                    && tmpLocation.getLongitude() != 0) {
-                return value;
-            } else {
-                return null;
-            }
-        } else {
+        if (tmpLocation == null) {
             LogWrapper.v(TAG, t0 + "[ms]");
+            return null;
+        }
+        String value = "" + tmpLocation.getLongitude();
+
+         LogWrapper.v(TAG, "tmpLocation.getAccuracy: " + tmpLocation.getAccuracy());
+         LogWrapper.v(TAG, "getLastLongitude: " + value + "; on " + new Date(tmpLocation.getTime()));
+         t0 = System.currentTimeMillis() - t0;
+         LogWrapper.v(TAG, t0 + "[ms]");
+
+        // dont return default 0,0 values sometimes seen
+        if (tmpLocation.getLatitude() != 0f && tmpLocation.getLongitude() != 0) {
+            return value;
+        } else {
             return null;
         }
     }
@@ -206,19 +176,11 @@ public class OTDataSockets {
                         .getSystemService(Context.LOCATION_SERVICE);
 
         // try to get the latest
-        Location tmpLocation =
-                locationManager
-                        .getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        Location tmpLocation =locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
 
         if (tmpLocation != null) {
 
             String value = "" + tmpLocation.getTime();
-            // LogWrapper.v(TAG, "getLastCoordinates: " + coordinates + "; "
-            // + new Date(tmpLocation.getTime()));
-            // t0 = System.currentTimeMillis() - t0;
-            // LogWrapper.v(TAG, t0 + "[ms]");
-
-            // dont return default 0,0 values sometimes seen
             if (tmpLocation.getLatitude() != 0f
                     && tmpLocation.getLongitude() != 0) {
                 return value;
@@ -248,12 +210,9 @@ public class OTDataSockets {
         long t0 = System.currentTimeMillis();
         LogWrapper.v(TAG, "getIpAddress()");
         try {
-            for (Enumeration<NetworkInterface> en =
-                    NetworkInterface.getNetworkInterfaces(); en
-                    .hasMoreElements();) {
+            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
                 NetworkInterface intf = en.nextElement();
-                for (Enumeration<InetAddress> enumIpAddr =
-                        intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
+                for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
                     InetAddress inetAddress = enumIpAddr.nextElement();
                     if (!inetAddress.isLoopbackAddress()) {
                         LogWrapper.v(TAG, t0 + "[ms]");
@@ -279,9 +238,7 @@ public class OTDataSockets {
      * in-android
      */
     public static String getCarrier(final Context appContext) {
-        TelephonyManager manager =
-                (TelephonyManager) appContext
-                        .getSystemService(Context.TELEPHONY_SERVICE);
+        TelephonyManager manager = (TelephonyManager) appContext.getSystemService(Context.TELEPHONY_SERVICE);
         if (manager != null) {
             return manager.getNetworkOperatorName();
         } else {
@@ -291,63 +248,42 @@ public class OTDataSockets {
 
     @SuppressWarnings("unchecked")
     public static String getNetworkType(final Context appContext) {
-
         long t0 = System.currentTimeMillis();
         LogWrapper.v(TAG, "getNetworkType()");
-
-        if (cacheType.get("last modified time") != null
-                && (System.currentTimeMillis()
-                        - (Long) cacheType.get("last modified time") < NETWORK_CACHE_MS)) {
+        if (cacheType.get("last modified time") != null && (System.currentTimeMillis() - (Long) cacheType.get("last modified time") < NETWORK_CACHE_MS)) {
             LogWrapper.v(TAG, (String) cacheType.get("networkType"));
-
-            LogWrapper.v(TAG, "cache is "
-                    + (System.currentTimeMillis() - (Long) cacheType
-                            .get("last modified time")) + " [ms] old");
+            LogWrapper.v(TAG, "cache is " + (System.currentTimeMillis() - (Long) cacheType.get("last modified time")) + " [ms] old");
 
             t0 = System.currentTimeMillis() - t0;
             LogWrapper.v(TAG, t0 + "[ms]");
-
             return (String) cacheType.get("networkType");
         }
         try {
             LogWrapper.v(TAG, "Getting network type.");
 
-            ConnectivityManager connectivityManager =
-                    (ConnectivityManager) appContext
-                            .getSystemService(Context.CONNECTIVITY_SERVICE);
-            NetworkInfo activeNetworkInfo =
-                    connectivityManager.getActiveNetworkInfo();
-
-            if (activeNetworkInfo == null) {
-                cacheType.put("networkType", NO_NETWORK);
-                cacheType.put("last modified time", System.currentTimeMillis());
-                t0 = System.currentTimeMillis() - t0;
-                LogWrapper.v(TAG, t0 + "[ms]");
-                return (String) cacheType.get("networkType");
+            ConnectivityManager connectivityManager = (ConnectivityManager) appContext.getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+            if (activeNetworkInfo != null) {
+	            String networkInfoTypeName = activeNetworkInfo.getTypeName();
+	            
+	            cacheType.put("networkType", networkInfoTypeName);
+	            cacheType.put("last modified time", System.currentTimeMillis());
+	            LogWrapper.v(TAG, networkInfoTypeName);
+	
+	            t0 = System.currentTimeMillis() - t0;
+	            LogWrapper.v(TAG, t0 + "[ms]");
+	            return networkInfoTypeName;
             }
-            String networkInfoTypeName = activeNetworkInfo.getTypeName();
-            if (networkInfoTypeName.equalsIgnoreCase("wifi")) {
-                networkInfoTypeName = WIFI;
-            } else {
-                networkInfoTypeName = networkInfoTypeName.toLowerCase();
-            }
-            cacheType.put("networkType", networkInfoTypeName);
-            cacheType.put("last modified time", System.currentTimeMillis());
-            LogWrapper.v(TAG, (String) cacheType.get("networkType"));
-
-            t0 = System.currentTimeMillis() - t0;
-            LogWrapper.v(TAG, t0 + "[ms]");
-            return (String) cacheType.get("networkType");
         } catch (SecurityException ise) {
             LogWrapper.w(TAG, ise);
         }
         cacheType.put("networkType", NO_NETWORK);
         cacheType.put("last modified time", System.currentTimeMillis());
-        LogWrapper.v(TAG, (String) cacheType.get("networkType"));
+        LogWrapper.v(TAG, NO_NETWORK);
 
         t0 = System.currentTimeMillis() - t0;
         LogWrapper.v(TAG, t0 + "[ms]");
-        return (String) cacheType.get("networkType");
+        return NO_NETWORK;
     }
 
     public static String getPlatform() {
@@ -362,14 +298,12 @@ public class OTDataSockets {
         return release;
     }
 
-    public static String getScreenHeight(final Context appContext) {
-
+    @SuppressWarnings("deprecation")
+	public static String getScreenHeight(final Context appContext) {
         long t0 = System.currentTimeMillis();
         LogWrapper.v(TAG, "getScreenHeight()");
         // http://stackoverflow.com/questions/1016896/android-how-to-get-screen-dimensions
-        WindowManager windowManager =
-                (WindowManager) appContext
-                        .getSystemService(Context.WINDOW_SERVICE);
+        WindowManager windowManager = (WindowManager) appContext.getSystemService(Context.WINDOW_SERVICE);
         // int width = windowManager.getDefaultDisplay().getWidth();
         int height = windowManager.getDefaultDisplay().getHeight();
 
@@ -379,14 +313,12 @@ public class OTDataSockets {
         return "" + height;
     }
 
-    public static String getScreenWidth(final Context appContext) {
-
+    @SuppressWarnings("deprecation")
+	public static String getScreenWidth(final Context appContext) {
         long t0 = System.currentTimeMillis();
         LogWrapper.v(TAG, "getScreenWidth()");
         // http://stackoverflow.com/questions/1016896/android-how-to-get-screen-dimensions
-        WindowManager windowManager =
-                (WindowManager) appContext
-                        .getSystemService(Context.WINDOW_SERVICE);
+        WindowManager windowManager = (WindowManager) appContext.getSystemService(Context.WINDOW_SERVICE);
         int width = windowManager.getDefaultDisplay().getWidth();
         // int height = windowManager.getDefaultDisplay().getHeight();
 
@@ -404,14 +336,12 @@ public class OTDataSockets {
     }
 
     public static String getUserAgent(final Context appContext) {
-
         long t0 = System.currentTimeMillis();
         LogWrapper.v(TAG, "getUserAgent()");
         // getting the user agent
         // http://developer.android.com/reference/android/webkit/WebSettings.html#getUserAgentString()
         // http://stackoverflow.com/questions/5638749/get-user-agent-in-my-app-which-doesnt-contain-a-webview
         WebView view = new WebView(appContext);
-
         t0 = System.currentTimeMillis() - t0;
         LogWrapper.v(TAG, t0 + "[ms]");
 
@@ -419,15 +349,11 @@ public class OTDataSockets {
     }
 
     public static String getWifiInfo(final Context appContext) {
-
         long t0 = System.currentTimeMillis();
         LogWrapper.v(TAG, "getWifiInfo()");
 
         try {
-            WifiManager wifiManager =
-                    (WifiManager) appContext
-                            .getSystemService(Context.WIFI_SERVICE);
-
+            WifiManager wifiManager = (WifiManager) appContext.getSystemService(Context.WIFI_SERVICE);
             WifiInfo wifiInfo = wifiManager.getConnectionInfo();
 
             LogWrapper.v("getWifiInfo(): ", wifiInfo.toString());
@@ -441,19 +367,5 @@ public class OTDataSockets {
 
         return "unknown";
     }
-
-    // public static boolean isNetworkAvailable(final Context appContext) {
-    //
-    // long t0 = System.currentTimeMillis();
-    // ConnectivityManager cm =
-    // (ConnectivityManager) appContext
-    // .getSystemService(Context.CONNECTIVITY_SERVICE);
-    // NetworkInfo info = cm.getActiveNetworkInfo();
-    //
-    // t0 = System.currentTimeMillis() - t0;
-    // LogWrapper.v(TAG, t0 + "[ms]");
-    //
-    // return (info != null);
-    // }
 
 }

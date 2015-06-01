@@ -294,16 +294,13 @@ public class OTFileUtils {
         // Otherwise, create any necessary directories, and the file itself.
         try {
             new File(file.getAbsolutePath()).mkdirs();
-
             if (file.createNewFile()) {
                 return;
             }
         } catch (IOException e) {
-            LogWrapper.w(TAG, "Unable to make, get or create file: " + fileName
-                    + " with pathName: " + pathName);
+            LogWrapper.w(TAG, "Unable to make, get or create file: " + fileName + " with pathName: " + pathName);
             throw new IOException();
         }
-
     }
 
     /**
