@@ -33,7 +33,7 @@ public class LogWrapper {
      * Lower levels will give more details but will also clutter up the LogCat
      * output.
      */
-    private static final LogLevel m_logLevel = LogLevel.kVerbose;
+    private static final LogLevel m_logLevel = LogLevel.kDebug;
 
     public static void v(String tag, Object msg) {
         if (m_logLevel.compareTo(LogLevel.kVerbose) <= 0)
@@ -42,7 +42,7 @@ public class LogWrapper {
 
     public static void d(String tag, Object msg) {
         if (m_logLevel.compareTo(LogLevel.kDebug) <= 0)
-            Log.v(tag, msg.toString());
+            Log.d(tag, msg.toString());
     }
 
     public static void i(String tag, Object msg) {
