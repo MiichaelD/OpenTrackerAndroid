@@ -40,12 +40,10 @@ public final class OTSvnVersion {
             "$Date: 2012-03-08 16:34:24 +0100 (Thu, 08 Mar 2012) $";
  
     private static final String SVN_REVISION =
-            SVN_REVISION_RAW.replaceAll("\\$Revision:\\s*", "").replaceAll(
-                    "\\s*\\$", "");
+            SVN_REVISION_RAW.replaceAll("\\$Revision:\\s*", "").replaceAll("\\s*\\$", "");
 
     private static final String SVN_LASTCHANGEDDATE =
-            SVN_LASTCHANGEDDATE_RAW.replaceAll("\\$LastChangedDate:\\s*", "")
-                    .replaceAll("\\s*\\$", "");
+            SVN_LASTCHANGEDDATE_RAW.replaceAll("\\$LastChangedDate:\\s*", "").replaceAll("\\s*\\$", "");
 
     /**
      * Gets the revision number of this file in Subversion

@@ -53,7 +53,7 @@ public class OTDataSockets {
 
     // ten seconds
     private static final long NETWORK_CACHE_MS = 10000l;// = 1 / 6 * 1000l * 60l;
-    public static final String NO_NETWORK = "no network";
+    public static final String NO_NETWORK = "NO_NETWORK";
     private static final String TAG = OTDataSockets.class.getName();
 
     // private static OTLocationService locationService = null;

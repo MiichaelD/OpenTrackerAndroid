@@ -22,8 +22,7 @@ public class MyLocationManager {
         }
     }
 
-    LocationListener[] mLocationListeners =
-            new LocationListener[] {
+    LocationListener[] mLocationListeners =  new LocationListener[] {
                     new LocationListener(LocationManager.GPS_PROVIDER),
                     new LocationListener(LocationManager.NETWORK_PROVIDER) };
 
@@ -40,16 +39,13 @@ public class MyLocationManager {
         }
 
         public void onLocationChanged(Location newLocation) {
-            if (newLocation.getLatitude() == 0.0
-                    && newLocation.getLongitude() == 0.0) {
-                // Hack to filter out 0.0,0.0 locations
+        	// Hack to filter out 0.0,0.0 locations
+            if (newLocation.getLatitude() == 0.0 && newLocation.getLongitude() == 0.0) {
                 return;
             }
             if (newLocation != null) {
-                // /if(newLocation.getTime() == 0)
-                // newLocation.setTime(System.currentTimeMillis());
-                newLocation.setTime(System.currentTimeMillis());
-
+                if(newLocation.getTime() == 0)
+                	newLocation.setTime(System.currentTimeMillis());
                 LogWrapper.i(TAG, "onLocationChanged in loc mgnr");
             }
             mLastLocation.set(newLocation);
@@ -57,6 +53,7 @@ public class MyLocationManager {
         }
 
         public void onProviderEnabled(String provider) {
+        	mValid = true;
         }
 
         public void onProviderDisabled(String provider) {
@@ -73,20 +70,28 @@ public class MyLocationManager {
             return mValid ? mLastLocation : null;
         }
     };
+    
+    public void getLastKnownLocation(){
+    	
+    }
 
+    /**Request location updates each time the minTime (ms) has passed or the location has changed for minDistance (m)
+     * We don't have minimum time nor distance filter, get all the updates! */
     public void startLocationReceiving() {
         if (this.mLocationManager != null) {
             try {
-                this.mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000, 0F,
-                        this.mLocationListeners[1]);
+            	if (mLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)){
+            		mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000, 0F, this.mLocationListeners[1]);
+            	}
             } catch (java.lang.SecurityException ex) {
             	LogWrapper.e(TAG, "SecurityException " + ex.getMessage());
             } catch (IllegalArgumentException ex) {
                 // Log.e(TAG, "provider does not exist " + ex.getMessage());
             }
             try {
-                this.mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0F,
-                        this.mLocationListeners[0]);
+            	if (mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)){
+            		mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0F, this.mLocationListeners[1]);
+            	}
             } catch (java.lang.SecurityException ex) {
             	LogWrapper.e(TAG, "SecurityException " + ex.getMessage());
             } catch (IllegalArgumentException ex) {
